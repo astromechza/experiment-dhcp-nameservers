@@ -72,12 +72,16 @@ func main() {
 	defer conn.Close()
 
 	// Buffer for reading received datagrams into, this is really up to the protocol and since in this case
-	// we know we're only sending short strings, we'll just use 1K. Remember, UDP datagrams can be fragmented
-	// into multiple packets.
+	// we know we're only sending short strings, we'll just use 1K. Remember, general UDP datagrams can be fragmented
+	// into multiple IP packets so this can be as high as 65,536 bytes since the IP "Total Length" field is 2 bytes and
+	// uses a "Fragment Offset" field of 13 bits (2**13 – 1) × 8 = 65,528 bytes.
+	// If the buffer is too small, the data will be discarded during copy from the OS.
 	buf := make([]byte, 1024)
 	for {
 		// Read some bytes from our listened connection and get the source addr. If we wanted to, we could write
-		// bytes directly back to that source address (if it was waiting to read on that)
+		// bytes directly back to that source address (if it was waiting to read on that). This is generally
+		// what you want to do to initiate a direct communication with the given host in order to exchange specific
+		// information.
 		n, addr, err := conn.ReadFromUDP(buf)
 		log.Printf("Received '%s' from %s", string(buf[0:n]), addr)
 		if err != nil {
